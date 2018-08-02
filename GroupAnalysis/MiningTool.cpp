@@ -18,10 +18,10 @@ double MiningTool::miningDistance(OriginPoint a, OriginPoint b) {
 
 	int tDiff = abs(a.getPosixtime() - b.getPosixtime());
 	double distance = distanceBetweenPoints(a.getLongitude(), a.getLatitude(), b.getLongitude(), b.getLatitude());
-	double angleDiff = abs(a.getAngle() - b.getAngle());
-	double speedDiff = abs(a.getSpeed() - b.getSpeed());
+	double angleDiff = fabs(a.getAngle() - b.getAngle());
+	double speedDiff = fabs(a.getSpeed() - b.getSpeed());
 
-	return 
+	return 0;
 }
 
 
@@ -34,4 +34,25 @@ double MiningTool::distanceBetweenPoints(double lastLongitude, double lastLatitu
 		res = 12742 * asin(sqrt(a)); // 2 * R; R = 6371 km
 	}
 	return res;
+}
+
+void MiningTool::analyzeBySnapshot(vector<TrackPoint>* trackPoints, int trackNum, int startTime, int endTime, int timeInterval) {
+
+	int *startIdx = new int[trackNum](), *endIdx = new int[trackNum]();
+	int tmpStartTime = startTime, tmpEndTime = startTime + timeInterval;
+
+	while (tmpStartTime <= endTime) {	
+		vector<vector<int>> candidate;
+		for (int counter = 0; counter < trackNum; ++counter) {//每个轨迹进行轨迹点抽取
+			//若该段没有属于切片的部分，直接跳过
+			if (trackPoints[counter].at(startIdx[counter]).getTime() > tmpEndTime || trackPoints[counter].at(endIdx[counter]).getTime() < tmpStartTime)
+				continue;
+			/*for (; trackPoints[counter].at(startIdx[counter]).getTime() < tmpEndTime;) {
+				printf("%d\t", startIdx[counter]);
+				startIdx[counter] += 1;
+			}			*/
+		}
+		tmpStartTime = tmpEndTime;//更新时间切片
+		tmpEndTime += timeInterval;
+	}
 }

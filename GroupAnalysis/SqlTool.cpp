@@ -9,6 +9,7 @@ SqlTool::SqlTool()
 
 MYSQL SqlTool::mysql;
 MYSQL_RES* SqlTool::res;
+MYSQL_ROW SqlTool::column;
 
 SqlTool::~SqlTool()
 {
@@ -62,4 +63,16 @@ char* SqlTool::datetimeConvertor(int input) {
 	char* res = new char[20];
 	sprintf_s(res, 20, "%4d-%02d-%02d %02d:%02d:%02d", 1900 + ltm.tm_year, 1 + ltm.tm_mon, ltm.tm_mday, ltm.tm_hour, ltm.tm_min, ltm.tm_sec);
 	return res;
+}
+
+bool SqlTool::setCharSetEncoding(const char* CharSetEncoding) {
+	char sql[256] = { 0 };
+	sprintf_s(sql, 256, "set names  %s; ", CharSetEncoding);
+	//strcpy_s(sql, "set names gbk");
+	if (mysql_query(&mysql, sql))        //Ö´ÐÐSQLÓï¾ä  
+	{
+		printf("operation failed (%s)\n", mysql_error(&mysql));
+		printf("SQL:%s\n", sql);
+		return false;
+	}
 }

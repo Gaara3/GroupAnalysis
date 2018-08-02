@@ -62,7 +62,8 @@ TrackPoint::TrackPoint(int orderNumber, double Longitude, double Latitude) :ORDE
 	this->LOWERRIGHTLATITUDE = Latitude;
 }
 
-TrackPoint::TrackPoint(int trackID, char* orderNumber, char* posixTime, char* source, char* centerLONGITUDE, char* centerLatitude, char* centerAltitude, char* speed, char* angle, char* confidenceLevel, char* reserve1, char* reserve2) {
+TrackPoint::TrackPoint(int trackID, char* targetID,char* orderNumber, char* posixTime, char* source, char* centerLONGITUDE, char* centerLatitude, char* centerAltitude, char* speed, char* angle, char* confidenceLevel, char* reserve1, char* reserve2) {
+	setTargetID(targetID);
 	this->TRACKID = trackID;
 	this->ORDERNUMBER = atoi(orderNumber);
 	this->TIME = atoi(posixTime);
@@ -75,6 +76,16 @@ TrackPoint::TrackPoint(int trackID, char* orderNumber, char* posixTime, char* so
 	this->CONFIDENCELEVEL = atof(confidenceLevel);
 	this->RESERVE1 = reserve1;
 	this->RESERVE2 = reserve2;
+}
+
+char * TrackPoint::getTargetID()
+{
+	return this->TARGETID;
+}
+
+void TrackPoint::setTargetID(char * targetID)
+{
+	this->TARGETID = targetID;
 }
 
 char* TrackPoint::insertHisSQL() {

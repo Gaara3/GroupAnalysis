@@ -30,6 +30,9 @@
     <ClInclude Include="MiningTool.h">
       <Filter>头文件</Filter>
     </ClInclude>
+    <ClInclude Include="Track.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="ConfigReader.cpp">
@@ -48,6 +51,9 @@
       <Filter>源文件</Filter>
     </ClCompile>
     <ClCompile Include="MiningTool.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="Track.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
   </ItemGroup>
