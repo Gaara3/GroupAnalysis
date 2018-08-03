@@ -1,6 +1,6 @@
 #include "MiningTool.h"
 #include <math.h>
-
+#include <algorithm> 
 
 MiningTool::MiningTool()
 {
@@ -36,23 +36,46 @@ double MiningTool::distanceBetweenPoints(double lastLongitude, double lastLatitu
 	return res;
 }
 
-void MiningTool::analyzeBySnapshot(vector<TrackPoint>* trackPoints, int trackNum, int startTime, int endTime, int timeInterval) {
+bool posixSort(OriginPoint a, OriginPoint b) {
+	return a.getPosixtime() < b.getPosixtime();
+}
 
-	int *startIdx = new int[trackNum](), *endIdx = new int[trackNum]();
+bool samePoint(OriginPoint a, OriginPoint b) {
+	if (strcmp(a.getTargetID(), b.getTargetID()) != 0)
+		return false;
+	return a.getLongitude() == b.getLongitude() && a.getPosixtime() == b.getPosixtime() && a.getLatitude() == b.getLatitude();
+}
+
+void MiningTool::analyzeBySnapshot(vector<OriginPoint> &Points, int trackNum, int startTime, int endTime, int timeInterval) {
+	
+	std::sort(Points.begin(), Points.end(), posixSort);//按时间排序
+
+	Points.erase(std::unique(Points.begin(), Points.end(),samePoint), Points.end());//去重
+
 	int tmpStartTime = startTime, tmpEndTime = startTime + timeInterval;
+	int pCounter = 0, pNum = Points.size();
+	while (tmpStartTime <= endTime) {		//每个时间切片轮询
+		vector<int> candidateIdx;
+		bool multiTarget = false;
+		do{
+			if (Points[pCounter].insideSnapshot(tmpStartTime, tmpEndTime)) {	//该点迹落于时间片内:1.判断是否为新目标 2.push入候选集
+				if (!multiTarget && !candidateIdx.empty() && !OriginPoint::sameTarget(Points[pCounter], Points[candidateIdx.back()]))//先与candidate最新元素比对
+					multiTarget = true;//将multiTarget加入条件，减少后续判断
 
-	while (tmpStartTime <= endTime) {	
-		vector<vector<int>> candidate;
-		for (int counter = 0; counter < trackNum; ++counter) {//每个轨迹进行轨迹点抽取
-			//若该段没有属于切片的部分，直接跳过
-			if (trackPoints[counter].at(startIdx[counter]).getTime() > tmpEndTime || trackPoints[counter].at(endIdx[counter]).getTime() < tmpStartTime)
-				continue;
-			/*for (; trackPoints[counter].at(startIdx[counter]).getTime() < tmpEndTime;) {
-				printf("%d\t", startIdx[counter]);
-				startIdx[counter] += 1;
-			}			*/
-		}
+				candidateIdx.push_back(pCounter);
+			}else	//不在时间片内，则跳出，进入下一时间片
+				break;			
+		} while (++pCounter < pNum);
+		
+		if(multiTarget)//多目标情况下再进行聚类
+			snapshotAnalyze(Points,candidateIdx);
+
 		tmpStartTime = tmpEndTime;//更新时间切片
 		tmpEndTime += timeInterval;
 	}
+}
+
+void MiningTool::snapshotAnalyze(vector<OriginPoint> Point,vector<int>candidateIdx)
+{
+		return;
 }

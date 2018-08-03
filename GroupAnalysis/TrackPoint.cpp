@@ -78,6 +78,17 @@ TrackPoint::TrackPoint(int trackID, char* targetID,char* orderNumber, char* posi
 	this->RESERVE2 = reserve2;
 }
 
+TrackPoint::TrackPoint(int trackID, char * targetID, char * posixtime, char * centerlongitude, char * cenlatitude, char * speed, char * angle)
+{
+	setTargetID(targetID);
+	this->TRACKID = trackID;
+	this->TIME = atoi(posixtime);
+	this->CENTERLONGITUDE = atof(centerlongitude);
+	this->CENTERLATITUDE = atof(cenlatitude);
+	this->speed = atof(speed);
+	this->angle = atof(angle);
+}
+
 char * TrackPoint::getTargetID()
 {
 	return this->TARGETID;

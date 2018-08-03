@@ -47,6 +47,7 @@ public:
 	TrackPoint(int orderNumber, double Longitude, double Latitude);
 	TrackPoint(/*char* TARGET,*/char* POSIXTIME, char* SOURCE, double LONGITUDE, double LATITUDE, double ALTITUDE, char* OPERATOR, char* RESERVE1, char* RESERVE2, double speed, double angle);
 	TrackPoint(int trackID, char* targetID,char* orderNumber, char* posixTime, char* source, char* centerLONGITUDE, char* centerLatitude, char* centerAltitude, char* speed, char* angle, char* confidenceLevel, char* reserve1, char* reserve2);
+	TrackPoint(int trackID,char* targetID,char*posixtime, char* centerlongitude,char* cenlatitude,char* speed,char* angle);
 
 	char* getTargetID();
 	void setTargetID(char* targetID);
