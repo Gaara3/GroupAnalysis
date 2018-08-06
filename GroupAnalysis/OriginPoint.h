@@ -1,9 +1,11 @@
 #pragma once
 #include <string>
+
+using std::string;
 class OriginPoint
 {
 private:
-	char* targetID;
+	string targetID;
 	int posixtime;
 	double longitude;
 	double latitude;
@@ -13,7 +15,7 @@ private:
 public:
 	OriginPoint(int trackID, char* targetID, char*posixtime, char* centerlongitude, char* cenlatitude, char* speed, char* angle);
 	void setTargetID(char* targetID);
-	char* getTargetID();
+	string getTargetID();
 	int getPosixtime();
 	double getLongitude();
 	double getLatitude();

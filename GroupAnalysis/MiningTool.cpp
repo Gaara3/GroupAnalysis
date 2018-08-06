@@ -77,5 +77,15 @@ void MiningTool::analyzeBySnapshot(vector<OriginPoint> &Points, int trackNum, in
 
 void MiningTool::snapshotAnalyze(vector<OriginPoint> Point,vector<int>candidateIdx)
 {
-		return;
+	int PointNum = (int)candidateIdx.size();
+	int** disMat = new int*[PointNum];
+	for (int counter = 0; counter < PointNum; ++counter) 
+		disMat[counter] = new int[PointNum];
+
+	Chameleon chameleon(Point, candidateIdx);
+	vector<Cluster> res = chameleon.chameleonCluster();
+	//knn连接图生成
+	//大簇拆分(因为此时的knn为仅考虑邻接权重的结果，后续度量回加入EC，SEC)
+	//层次聚类
+	
 }

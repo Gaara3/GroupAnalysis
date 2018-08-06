@@ -17,7 +17,7 @@ void OriginPoint::setTargetID(char * targetID)
 	this->targetID = targetID;
 }
 
-char* OriginPoint::getTargetID()
+string OriginPoint::getTargetID()
 {
 	return targetID;
 }
