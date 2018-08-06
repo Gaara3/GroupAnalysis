@@ -41,7 +41,7 @@ bool posixSort(OriginPoint a, OriginPoint b) {
 }
 
 bool samePoint(OriginPoint a, OriginPoint b) {
-	if (strcmp(a.getTargetID(), b.getTargetID()) != 0)
+	if (a.getTargetID()!=b.getTargetID())
 		return false;
 	return a.getLongitude() == b.getLongitude() && a.getPosixtime() == b.getPosixtime() && a.getLatitude() == b.getLatitude();
 }
@@ -82,7 +82,7 @@ void MiningTool::snapshotAnalyze(vector<OriginPoint> Point,vector<int>candidateI
 	for (int counter = 0; counter < PointNum; ++counter) 
 		disMat[counter] = new int[PointNum];
 
-	Chameleon chameleon(Point, candidateIdx);
+	Chameleon chameleon(Point, candidateIdx,4);
 	vector<Cluster> res = chameleon.chameleonCluster();
 	//knn连接图生成
 	//大簇拆分(因为此时的knn为仅考虑邻接权重的结果，后续度量回加入EC，SEC)
