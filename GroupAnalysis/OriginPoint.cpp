@@ -44,7 +44,7 @@ bool OriginPoint::insideSnapshot(int s, int e)
 
 bool OriginPoint::sameTarget(OriginPoint a, OriginPoint b)
 {
-	return strcmp(a.getTargetID(), b.getTargetID()) == 0;	
+	return a.getTargetID() == b.getTargetID() ;
 }
 
 double OriginPoint::getLongitude() {

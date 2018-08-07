@@ -12,29 +12,31 @@ MiningTool::~MiningTool()
 }
 
 double MiningTool::miningDistance(OriginPoint a, OriginPoint b) {
-	//同一目标不同点迹，不计算距离，聚类时直接过滤
-	/*if (a.getTargetID() == b.getTargetID())
-		return -1;*/		//先一起聚类，在簇内再去重
 
-	int tDiff = abs(a.getPosixtime() - b.getPosixtime());
-	double distance = distanceBetweenPoints(a.getLongitude(), a.getLatitude(), b.getLongitude(), b.getLatitude());
+	double tDiff = abs(a.getPosixtime() - b.getPosixtime())/60;	//以分钟为单位，暂定理想编群tDiff应在20以内
+	if (tDiff == 0)
+		tDiff = 1;
+	double distance = distanceBetweenPoints(a.getLongitude(), a.getLatitude(), b.getLongitude(), b.getLatitude())*1000;//以M为单位计算,暂定理想dis为1000级，log后为10级
+	if (distance == 0)
+		distance = 2;
 	double angleDiff = fabs(a.getAngle() - b.getAngle());
 	double speedDiff = fabs(a.getSpeed() - b.getSpeed());
-
-	return 0;
+	double res = (0.6*log(distance) + 0.2*(angleDiff + speedDiff)) * tDiff;
+	printf("%10lg\t", res);
+	return res;
 }
 
 
 double MiningTool::distanceBetweenPoints(double lastLongitude, double lastLatitude, double longitude, double latitude) {
 	double res = 0;
-	if (lastLatitude <= 90 && lastLongitude <= 180) {	//当一段轨迹完结，设置异常值以便于新一段计算
+	if (lastLatitude <= 90 && lastLongitude <= 180) {	
 		double p = 0.017453292519943295;    // Math.PI / 180
 		double a = 0.5 - cos((latitude - lastLatitude) * p) / 2 + cos(latitude * p) * cos(lastLatitude * p) *(0.5 - cos((longitude - lastLongitude) * p) / 2);
 
 		res = 12742 * asin(sqrt(a)); // 2 * R; R = 6371 km
 	}
 	return res;
-}
+}   
 
 bool posixSort(OriginPoint a, OriginPoint b) {
 	return a.getPosixtime() < b.getPosixtime();

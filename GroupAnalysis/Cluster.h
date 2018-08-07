@@ -6,6 +6,7 @@ class Cluster
 {
 public:
 	vector<ClusterPoint> points;
+	Cluster(vector<ClusterPoint> points);
 	Cluster();
 	~Cluster();
 };
