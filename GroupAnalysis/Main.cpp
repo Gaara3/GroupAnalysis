@@ -1,12 +1,12 @@
-#include "OriginPoint.h"
+ï»¿#include "OriginPoint.h"
 #include "Track.h"
 #include "SqlTool.h"
 #include "MiningTool.h"
 #include <vector>
 
-int readTrackInfoFromDB(vector<Track> &);	//¶ÁÈ¡historyÀïµÄËùÓĞµã¼ÇÂ¼
-vector<OriginPoint> readTrackPointFromDB(vector<Track>);	//¶ÁÈ¡ÌØ¶¨Ìõ¼şµÄµã¼ÇÂ¼
-//int** clusterGenerator(vector<TrackPoint>, int timeInterval);//¶ÔvectorÄÚµÄµã¼£ÒÔtimeIntervalÎªµ¥Î»¾ÛÀà
+int readTrackInfoFromDB(vector<Track> &);	//è¯»å–historyé‡Œçš„æ‰€æœ‰ç‚¹è®°å½•
+vector<OriginPoint> readTrackPointFromDB(vector<Track>);	//è¯»å–ç‰¹å®šæ¡ä»¶çš„ç‚¹è®°å½•
+//int** clusterGenerator(vector<TrackPoint>, int timeInterval);//å¯¹vectorå†…çš„ç‚¹è¿¹ä»¥timeIntervalä¸ºå•ä½èšç±»
 
 int main() {
 
@@ -15,14 +15,14 @@ int main() {
 
 	vector<Track> tracks;
 
-	int trackNum = readTrackInfoFromDB(tracks);//´ÓÖ÷±í»ñÈ¡¹ìµÀĞÅÏ¢
+	int trackNum = readTrackInfoFromDB(tracks);//ä»ä¸»è¡¨è·å–è½¨é“ä¿¡æ¯
 
-	vector<OriginPoint> Points =readTrackPointFromDB(tracks);//´Ó×Ó±í»ñÈ¡µã¼£ĞÅÏ¢
+	vector<OriginPoint> Points =readTrackPointFromDB(tracks);//ä»å­è¡¨è·å–ç‚¹è¿¹ä¿¡æ¯
 
 	int minPosixTime = atoi(SqlTool::getVariableFromDB("select min(POSIXTIME) from m_selectedtrack_sub"));
 	int maxPosixTime = atoi(SqlTool::getVariableFromDB("select max(POSIXTIME) from m_selectedtrack_sub"));
 
-	MiningTool::analyzeBySnapshot(Points, trackNum, minPosixTime, maxPosixTime, timeInterval);//¶ÔÕûÌå½øĞĞÇĞÆ¬·ÖÎö
+	MiningTool::analyzeBySnapshot(Points, trackNum, minPosixTime, maxPosixTime, timeInterval);//å¯¹æ•´ä½“è¿›è¡Œåˆ‡ç‰‡åˆ†æ
 
 	system("pause");
 }
@@ -33,7 +33,7 @@ int readTrackInfoFromDB(vector<Track> &tracks) {
 	sprintf_s(getMain, 256, "select TRACKID,POINTAMOUNT,TARGETID,STARTTIME,ENDTIME,LENGTH,SOURCE,TASKINFO,CONFIDENCELEVEL,\
 OPERATOR,RESERVE1,RESERVE2 from m_selectedtrack_main;");
 	SqlTool::operationExcutor(getMain, SqlTool::res);
-	//»ñÈ¡ËùÓĞÖ÷¹ì¼£ĞÅÏ¢
+	//è·å–æ‰€æœ‰ä¸»è½¨è¿¹ä¿¡æ¯
 	while (SqlTool::column = mysql_fetch_row(SqlTool::res)) {
 		tracks.push_back(Track(SqlTool::column[0], SqlTool::column[1], SqlTool::column[2],
 			SqlTool::column[3], SqlTool::column[4], SqlTool::column[5], SqlTool::column[6],

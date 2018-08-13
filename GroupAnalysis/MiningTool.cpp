@@ -79,6 +79,8 @@ void MiningTool::analyzeBySnapshot(vector<OriginPoint> &Points, int trackNum, in
 
 void MiningTool::snapshotAnalyze(vector<OriginPoint> Point,vector<int>candidateIdx)
 {
+	vector<set<string> > groups;
+	//TODO  优化，算出不同目标之间最近点距离进行判断是否要聚类
 	int PointNum = (int)candidateIdx.size();
 	int** disMat = new int*[PointNum];
 	for (int counter = 0; counter < PointNum; ++counter) 
@@ -86,8 +88,13 @@ void MiningTool::snapshotAnalyze(vector<OriginPoint> Point,vector<int>candidateI
 
 	Chameleon chameleon(Point, candidateIdx,4);
 	vector<Cluster> res = chameleon.chameleonCluster();
+	for (Cluster c : res) {
+		set<string> tmp= chameleon.clusterAnalyse(c);
+		if (tmp.size() > 1)
+			groups.push_back(tmp);
+	}
 	//knn连接图生成
 	//大簇拆分(因为此时的knn为仅考虑邻接权重的结果，后续度量回加入EC，SEC)
 	//层次聚类
-	
+	//生成簇进行目标分析，单目标簇删去，多目标簇进行簇内去重
 }

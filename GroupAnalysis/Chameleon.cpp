@@ -1,9 +1,49 @@
-#include "Chameleon.h"
+ï»¿#include "Chameleon.h"
 #include "MiningTool.h"
 #include <algorithm>
 #include <fstream>
 #include <string>
 #include <iostream>
+
+double Chameleon::ECofClusters(Cluster a, Cluster b)
+{
+	vector<ClusterPoint> ap= a.points;
+	vector<ClusterPoint> bp = b.points;
+	int aSize = ap.size();
+	int bSize = bp.size();
+	double res = 1/this->adjMat[0][1];		//TODO  è¿™é‡Œåº”è¯¥æ˜¯æƒé‡çŸ©é˜µï¼Œè€Œéè·ç¦»çŸ©é˜µ
+	for (int i = 0; i < aSize; ++i) {
+		for (int j = 0; j < bSize; ++j) {
+			if (i == j)
+				continue;
+			double tmpEC = 1 / adjMat[i][j];
+			if (tmpEC < res)
+				res = tmpEC;
+		}
+	}
+	return res;
+}
+
+double Chameleon::RIofClusters(Cluster a, Cluster b)
+{
+	double ECofA = a.getEC();
+	double ECofB = b.getEC();
+	double	ECofAB = ECofClusters(a, b);
+	return 2*ECofAB /(ECofA+ECofB);
+}
+
+double Chameleon::RCofClusters(Cluster a, Cluster b)
+{
+	int sizeA = a.points.size(),sizeB = b.points.size();
+	double EcA = a.getEC(), Ecb = b.getEC();
+	double ECofAB = ECofClusters(a, b);
+	return ECofAB *(sizeA+sizeB)/ (sizeA*Ecb+sizeB*EcA);
+}
+
+double Chameleon::connectionOfClusters(Cluster a, Cluster b)
+{
+	return RIofClusters(a,b) * RCofClusters(a,b);
+}
 
 Chameleon::Chameleon(vector<OriginPoint> p, vector<int> i,int k)
 {
@@ -16,82 +56,124 @@ Chameleon::Chameleon(vector<OriginPoint> p, vector<int> i,int k)
 
 vector<Cluster> Chameleon::chameleonCluster()
 {
-	knnGenerate(4);
+	knnGenerate(4);	//ç”Ÿæˆknnå­å›¾
 	return vector<Cluster>();
 }
 
 void Chameleon::knnDfs(bool **knnMat, int PointNum,bool *visitedFlag,int idx,vector<ClusterPoint> &connectedPoints)
 {
-	for (int i = 0; i < PointNum; ++i) {	//ÂÖÑ¯¼ì²éËùÓĞµã£¬Èô¸ÃµãÎ´±»·ÃÎÊ£¬ÇÒÎª½üÁÚµã
-		if (!visitedFlag[i] && knnMat[idx][i]) {
+	for (int i = 0; i < PointNum; ++i) {	//è½®è¯¢æ£€æŸ¥æ‰€æœ‰ç‚¹ï¼Œè‹¥è¯¥ç‚¹æœªè¢«è®¿é—®ï¼Œä¸”ä¸ºè¿‘é‚»ç‚¹
+		if (knnMat[idx][i] && !visitedFlag[i]) {
 			connectedPoints.push_back(Points[i]);
 			visitedFlag[i] = true;
-			knnDfs(knnMat, PointNum, visitedFlag, i, connectedPoints);//¶Ô·ûºÏÌõ¼şµÄ½ôÁÚµã¼ÌĞøÉîËÑ
+			knnDfs(knnMat, PointNum, visitedFlag, i, connectedPoints);//å¯¹ç¬¦åˆæ¡ä»¶çš„ç´§é‚»ç‚¹ç»§ç»­æ·±æœ
 		}
 	}
+}
+
+void printLine(double* a, int size) {
+	for (int counter = 0; counter < size; ++counter) {
+		printf("%10lg", a[counter]);
+	}
+	printf("\n");
+}
+
+void writeArray2File(string filename, double** data, int m, int n) {
+	std::ofstream outFile;
+	outFile.open(filename, std::ios::out);
+	for (int i = 0; i < m; ++i) {
+		for (int j = 0; j < n; ++j)
+			outFile << data[i][j]<<",";
+		outFile << std::endl;
+	}
+	outFile.close();
+}
+void writeArray2File(string filename, bool** data, int m, int n) {
+	std::ofstream outFile;
+	outFile.open(filename, std::ios::out);
+	for (int i = 0; i < m; ++i) {
+		for (int j = 0; j < n; ++j)
+			outFile << data[i][j]<<",";
+		outFile << std::endl;
+	}
+	outFile.close();
 }
 
 void Chameleon::knnGenerate(int k)
 {
 	int pointNum = Points.size();
-	double **disMat = new double*[pointNum];
-	for (int counter = 0; counter < pointNum; counter++)
-		disMat[counter] = new double[pointNum];	
+	double  **tmpDisMat = new double*[pointNum] , *kDis = new double[pointNum];
+	bool* visitedFlag = new bool[pointNum] , ** knnMat = new bool*[pointNum];
 
-	for (int i = 0; i < pointNum; i++) {	//¹¹½¨ÁÚ½Ó¾ØÕó
+	this->adjMat = new double*[pointNum];
+	for (int i = 0; i < pointNum; ++i) {
+		visitedFlag[i] = false;
+		knnMat[i] = new bool[pointNum];
+		adjMat[i] = new double[pointNum];
+		tmpDisMat[i] = new double[pointNum];
+	}		
+
+	for (int i = 0; i < pointNum; i++) {	//æ„å»ºé‚»æ¥çŸ©é˜µ
 		for (int j = 0; j < pointNum; j++) {
 			if (i > j) {
-				disMat[i][j] = MiningTool::miningDistance(Points[i], Points[j]);
-				disMat[j][i] = disMat[i][j];
+				adjMat[i][j] = MiningTool::miningDistance(Points[i], Points[j]);
+				adjMat[j][i] = adjMat[i][j];
+				tmpDisMat[i][j] = adjMat[i][j];
+				tmpDisMat[j][i] = adjMat[i][j];
 			}
-			else if (i == j)
-				disMat[i][i] = 0;
+			else if (i == j) {
+				adjMat[i][i] = 0;
+				tmpDisMat[i][j] = 0;
+			}							
 			else
-				break;	//ÒÔÏÂÈı½ÇĞÎÊ½¹¹½¨¾àÀë¾ØÕó£¬´Ë´¦break¼õÉÙÑ­»·´ÎÊı
+				break;	//ä»¥ä¸‹ä¸‰è§’å½¢å¼æ„å»ºè·ç¦»çŸ©é˜µï¼Œæ­¤å¤„breakå‡å°‘å¾ªç¯æ¬¡æ•°
 		}
 	}	
-
-	//´òÓ¡¾àÀë¾ØÕó
-	std::ofstream outFile;
-	outFile.open("data.csv", std::ios::out);
-	for (int i = 0; i < pointNum; ++i) {
-		for (int j = 0; j < pointNum; ++j)
-			outFile << disMat[i][j] << ",";
-		outFile << std::endl;
-	}
-	outFile.close();
-	bool* visitedFlag = new bool[pointNum];
-	for (int i = 0; i < pointNum; ++i)
-		visitedFlag[i] = false;//¹æ·¶³õÊ¼»¯
-	bool** knnMat = new bool*[pointNum];
-	for (int counter = 0; counter < pointNum; ++counter)
-		knnMat[counter] = new bool[pointNum];
-
-	double *kDis = new double[pointNum];
-	//¶ÔÃ¿¸öµãÑ°ÕÒµ½kÎ»¾àÀëãĞÖµ
+	//writeArray2File("originDis.csv", disMat, pointNum, pointNum); for debug
+	//å¯¹æ¯ä¸ªç‚¹å¯»æ‰¾åˆ°kä½è·ç¦»é˜ˆå€¼
 	for (int counter = 0; counter < pointNum; ++counter) {
-		std::sort(disMat[counter], disMat[counter] + pointNum);
-		kDis[counter] = disMat[counter][k];
+		std::sort(tmpDisMat[counter], tmpDisMat[counter] + pointNum);
+		kDis[counter] = tmpDisMat[counter][k];
 	}
+	
+	for (int i = 0; i < pointNum; ++i) {
+		delete[] tmpDisMat[i];
+	}
+	delete[] tmpDisMat;
+	//writeArray2File("orderedDis.csv", tmpDisMat, pointNum, pointNum);			For debug
+	//æ ¹æ®ç¬¬kä½è·ç¦»ç½®knnè¡¨å¾çŸ©é˜µ
 	for (int i = 0; i < pointNum; ++i) {
 		for (int j = 0; j < pointNum; ++j) {
-			if (disMat[i][j] >= kDis[i] || i==j)
+			if (adjMat[i][j] >= kDis[i] || i==j)
 				knnMat[i][j] = false;
 			else
 				knnMat[i][j] = true;
 		}
 	}
+	//writeArray2File("knn.csv", knnMat, pointNum, pointNum);
+
 	for (int i = 0; i < pointNum; ++i) {
 		if (visitedFlag[i])
 			continue;
-		//»¹Ğè¼ì²éÊÇ·ñ´æÔÚ½üÁÚµã
+		//è¿˜éœ€æ£€æŸ¥æ˜¯å¦å­˜åœ¨è¿‘é‚»ç‚¹
 		vector<ClusterPoint> connectedP;
 		connectedP.push_back(Points[i]);
 		visitedFlag[i] = true;
 		knnDfs(knnMat, pointNum, visitedFlag, i, connectedP);
+		if (connectedP.size() == 1)
+			continue;
 		clusters.push_back(Cluster(connectedP));
 	}
 	system("pause");
+}
+
+set<string> Chameleon::clusterAnalyse(Cluster c)
+{
+	set<string> res;
+	for (ClusterPoint cp : c.points) {
+		res.insert(cp.getTargetID());
+	}
+	return set<string>();
 }
 
 
