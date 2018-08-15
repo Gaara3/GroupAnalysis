@@ -132,6 +132,7 @@
     <ClInclude Include="MiningTool.h" />
     <ClInclude Include="OriginPoint.h" />
     <ClInclude Include="SqlTool.h" />
+    <ClInclude Include="Tools.h" />
     <ClInclude Include="Track.h" />
     <ClInclude Include="TrackPoint.h" />
   </ItemGroup>
@@ -144,6 +145,7 @@
     <ClCompile Include="MiningTool.cpp" />
     <ClCompile Include="OriginPoint.cpp" />
     <ClCompile Include="SqlTool.cpp" />
+    <ClCompile Include="Tools.cpp" />
     <ClCompile Include="Track.cpp" />
     <ClCompile Include="TrackPoint.cpp" />
   </ItemGroup>
