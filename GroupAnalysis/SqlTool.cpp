@@ -27,6 +27,11 @@ bool SqlTool::connectDB() {//TODO   封装传入参数
 	return true;
 }
 
+void SqlTool::freeRes()
+{
+	return mysql_free_result(res);
+}
+
 bool SqlTool::operationExcutor(const char* operation, MYSQL_RES* &res) {
 	//printf("SQL:%s\n", operation);
 	if (mysql_query(&mysql, operation))        //执行SQL语句  

@@ -33,7 +33,7 @@ double MiningTool::distanceBetweenPoints(double lastLongitude, double lastLatitu
 		double p = 0.017453292519943295;    // Math.PI / 180
 		double a = 0.5 - cos((latitude - lastLatitude) * p) / 2 + cos(latitude * p) * cos(lastLatitude * p) *(0.5 - cos((longitude - lastLongitude) * p) / 2);
 
-		res = 12742 * asin(sqrt(a)); // 2 * R; R = 6371 km
+		res = 6371.393 * asin(sqrt(a)); // 2 * R; R = 6371 km
 	}
 	return res;
 }   
@@ -94,9 +94,7 @@ void MiningTool::snapshotAnalyze(vector<OriginPoint> Point,vector<int>candidateI
 		set<string> tmp= Chameleon::clusterAnalyse(c);
 		if (tmp.size() > 1)
 			groups.push_back(tmp);
-	}
-	
+	}	
 	//大簇拆分(因为此时的knn为仅考虑邻接权重的结果，后续度量回加入EC，SEC)
-	//层次聚类
-	
+	//层次聚类	
 }

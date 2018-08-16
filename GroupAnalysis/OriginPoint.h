@@ -13,8 +13,8 @@ private:
 	double angle;
 
 public:
-	OriginPoint(int trackID, char* targetID, char*posixtime, char* centerlongitude, char* cenlatitude, char* speed, char* angle);
-	void setTargetID(char* targetID);
+	OriginPoint(int trackID, string targetID, char*posixtime, char* centerlongitude, char* cenlatitude, char* speed, char* angle);
+	void setTargetID(string targetID);
 	string getTargetID();
 	int getPosixtime();
 	double getLongitude();

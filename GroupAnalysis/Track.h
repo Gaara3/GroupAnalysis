@@ -14,7 +14,7 @@ class Track
 private:
 	int TRACKID;
 	int POINTAMOUNT;
-	char* TARGETID;
+	string TARGETID;
 	/*char* TARGETMODELNUMBER;
 	char* TARGETNAME;
 	char* TARGETTYPE;*/
@@ -55,7 +55,7 @@ public:
 	void setLength(double length);
 	void setTargetID(char* id);
 	void setTrackIDofPoint(int trackID);
-	char* getTargetID();
+	string getTargetID();
 	string insertHisSQL();
 	char* insertFreqSQL();
 	void trackEndProcession(int endTime, int pointAmount, vector<TrackPoint>details, double totalLength);

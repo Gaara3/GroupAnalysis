@@ -16,6 +16,7 @@ public:
 	static MYSQL_ROW column;
 
 	static bool connectDB();
+	static void freeRes();
 	static bool operationExcutor(const char* operation, MYSQL_RES* &res);
 	static bool insertExcutor(const char* operation);
 	static char* getVariableFromDB(const char* operation);

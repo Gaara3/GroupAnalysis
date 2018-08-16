@@ -2,7 +2,7 @@
 #include <string>
 
 
-OriginPoint::OriginPoint(int trackID, char * targetID, char * posixtime, char * centerlongitude, char * cenlatitude, char * speed, char * angle)
+OriginPoint::OriginPoint(int trackID, string targetID, char * posixtime, char * centerlongitude, char * cenlatitude, char * speed, char * angle)
 {
 	setTargetID(targetID);
 	this->posixtime = atoi(posixtime);
@@ -12,7 +12,7 @@ OriginPoint::OriginPoint(int trackID, char * targetID, char * posixtime, char * 
 	this->angle = atof(angle);
 }
 
-void OriginPoint::setTargetID(char * targetID)
+void OriginPoint::setTargetID(string targetID)
 {
 	this->targetID = targetID;
 }

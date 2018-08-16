@@ -5,6 +5,7 @@
 #include <fstream>
 #include <string>
 #include <iostream>
+#include <limits>
 
 
 Chameleon::Chameleon(vector<OriginPoint> p, vector<int> i, int k)
@@ -12,7 +13,7 @@ Chameleon::Chameleon(vector<OriginPoint> p, vector<int> i, int k)
 	int pNum = i.size();
 	//为簇内点赋值id
 	for (int counter = 0; counter < pNum; ++counter) {
-		Points.push_back(ClusterPoint(counter, p[counter]));
+		Points.push_back(ClusterPoint(counter, p[i[counter]]));
 	}
 	this->k = k;
 
@@ -25,7 +26,10 @@ Chameleon::Chameleon(vector<OriginPoint> p, vector<int> i, int k)
 	for (int i = 0; i < pNum; i++) {
 		for (int j = 0; j <=i; j++) {
 			if (i > j) {
-				adjMat[i][j] = 1 / MiningTool::miningDistance(Points[i], Points[j]);	//构造的其实是权重矩阵
+				if(MiningTool::miningDistance(Points[i], Points[j]))	
+					adjMat[i][j] = 1 / MiningTool::miningDistance(Points[i], Points[j]);	//构造的其实是权重矩阵
+				else//挖掘距离为0，则置权重为最大值
+					adjMat[i][j] = std::numeric_limits< double >::max();
 				adjMat[j][i] = adjMat[i][j];
 			}
 			else if (i == j) {
@@ -37,7 +41,7 @@ Chameleon::Chameleon(vector<OriginPoint> p, vector<int> i, int k)
 }
 
 
-double Chameleon::ECofClusters(Cluster a, Cluster b)
+double Chameleon::ECofClusters(const Cluster &a, const Cluster &b)
 {
 	vector<ClusterPoint> ap= a.points;
 	vector<ClusterPoint> bp = b.points;
@@ -56,23 +60,23 @@ double Chameleon::ECofClusters(Cluster a, Cluster b)
 	return res;
 }
 
-double Chameleon::RIofClusters(Cluster a, Cluster b)
+double Chameleon::RIofClusters(const Cluster &a,const Cluster &b)
 {
-	double ECofA = a.getEC();
-	double ECofB = b.getEC();
+	double ECofA = a.EC;
+	double ECofB = b.EC;
 	double	ECofAB = ECofClusters(a, b);
 	return 2*ECofAB /(ECofA+ECofB);
 }
 
-double Chameleon::RCofClusters(Cluster a, Cluster b)
+double Chameleon::RCofClusters(const Cluster &a,const Cluster &b)
 {
 	int sizeA = a.points.size(),sizeB = b.points.size();
-	double EcA = a.getEC(), Ecb = b.getEC();
+	double EcA = a.EC, Ecb = b.EC;
 	double ECofAB = ECofClusters(a, b);
-	return ECofAB *(sizeA+sizeB)/ (sizeA*Ecb+sizeB*EcA);
+	return ECofAB *( sizeA + sizeB )/ ( sizeA * Ecb + sizeB * EcA );
 }
 
-double Chameleon::connectionOfClusters(Cluster a, Cluster b)
+double Chameleon::connectionOfClusters(const Cluster &a, const Cluster &b)
 {
 	return RIofClusters(a,b) * RCofClusters(a,b);
 }
@@ -90,17 +94,17 @@ void Chameleon::setClusterSubGraph(Cluster& cluster)
 	}
 }
 
-pair<int, int> Chameleon::findClusters2Merge()
+pair<int, int> Chameleon::findClusters2Merge(double &maxCon)
 {
 	int cSize = (int)clusters.size();
-	double maxCon = connectionOfClusters(clusters[0], clusters[1]);
+	maxCon = connectionOfClusters(clusters[0], clusters[1]);
 	pair<int, int>res(0,1);
 	for (int i = 0; i < cSize; ++i) {
 		for (int j = 0; j < i; ++j) {	//减少重复计算次数
 			if (i == j)
 				continue;
 			double tmp = connectionOfClusters(clusters[i],clusters[j]);
-			if (tmp > maxCon) {
+			if (tmp > maxCon) {	//取到连接权重最大的两簇
 				maxCon = tmp;
 				res.first = i;
 				res.second = j;
@@ -112,30 +116,31 @@ pair<int, int> Chameleon::findClusters2Merge()
 
 void Chameleon::merge2Clusters(Cluster &c1, Cluster& c2)
 {
-	//重置cluster1的子图矩阵
-	c1.resetSubGraph();
 	//将cluster2内的点逐个加入cluster1内
 	while (!c2.points.empty()) {
 		c1.points.push_back(c2.points.back());
 		c2.points.pop_back();
 	}
-	c1.setClusterSize((int)c1.points.size());
-	//更新簇子图矩阵
-	c1.setSubGraph(adjMat);
+	
+	//更新c1的子图矩阵、EC值
+	c1.updateClusterInfo(adjMat);
 }
 
 void Chameleon::clusterAlgorithm()
 {		
-	while (true) {//while(最近的簇，中位距离<阈值)
+	double maxCon = 0;
+	while (clusters.size()>1) {//while(最近的簇，中位距离<阈值)
 
 		//找到应合并的两簇，找出下标
-		pair<int,int> targets = findClusters2Merge();
-
+		pair<int,int> targets = findClusters2Merge(maxCon);
+		
+		//最近簇的邻接权重太小，则结束聚类
+		if (maxCon < 1000)
+			break;
 		//合并两簇，更新新簇内的子图
 		merge2Clusters(clusters[targets.first],clusters[targets.second]);
-		clusters.erase(clusters.begin() + targets.second );	//簇向量移除该簇
+		clusters.erase(clusters.begin() + targets.second );	//簇队列移除该簇
 
-		//更新全局簇连接图
 	}
 }
 
@@ -144,20 +149,20 @@ deque<Cluster> Chameleon::getClusters()
 	return this->clusters;
 }
 
-vector<Cluster> Chameleon::chameleonCluster()
+deque<Cluster> Chameleon::chameleonCluster()
 {
-	knnGenerate(4);	//生成knn子图
+	knnGenerate(3);	//生成knn子图
 	//聚类出最终类，存入clusters中
 	//clusterPartition();
-	//clusterAlgorithm();
-	return vector<Cluster>();
+	clusterAlgorithm();
+	return this->clusters;
 }
 
-
+/*对Idx点进行深度优先搜索*/
 void Chameleon::knnDfs(bool **knnMat, int PointNum, bool *visitedFlag, int idx, vector<ClusterPoint> &connectedPoints)
 {
 	for (int i = 0; i < PointNum; ++i) {	//轮询检查所有点，若该点未被访问，且为近邻点
-		if (knnMat[idx][i] && !visitedFlag[i]) {
+		if (!visitedFlag[i] && knnMat[idx][i] && knnMat[i][idx]) {
 			connectedPoints.push_back(Points[i]);
 			visitedFlag[i] = true;
 			knnDfs(knnMat, PointNum, visitedFlag, i, connectedPoints);//对符合条件的紧邻点继续深搜
@@ -223,9 +228,11 @@ void Chameleon::knnGenerate(int k)
 		knnDfs(knnMat, pointNum, visitedFlag, i, connectedP);
 		if (connectedP.size() == 1)
 			continue;
-		clusters.push_back(Cluster(connectedP,adjMat));
+		this->clusters.push_back(Cluster(connectedP,adjMat));
 	}
+	//Tools::writeArray2File("afterSubGraph.csv", clusters.back().subGraph, clusters.back().points.size(), clusters.back().points.size());
 }
+
 
 set<string> Chameleon::clusterAnalyse(Cluster c)
 {
@@ -245,4 +252,10 @@ Chameleon::Chameleon()
 
 Chameleon::~Chameleon()
 {
+	for (int i = 0; i < Points.size(); ++i)
+		delete[] adjMat[i];
+
+	delete[] adjMat;
+	Points.~Points();
+	clusters.~clusters();
 }

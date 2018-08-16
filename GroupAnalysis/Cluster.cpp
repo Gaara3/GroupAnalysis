@@ -1,6 +1,6 @@
 #include "Cluster.h"
 #include "MiningTool.h"
-
+#include "Tools.h"
 
 Cluster::Cluster(vector<ClusterPoint> points)
 {
@@ -14,6 +14,20 @@ Cluster::Cluster(vector<ClusterPoint> points, double **adjMat)
 	this->points.assign(points.begin(), points.end());
 	this->clusterSize = points.size();
 	setSubGraph(adjMat);
+	updateEC();
+}
+
+Cluster::Cluster(const Cluster & c)
+{
+	this->clusterSize = c.clusterSize;
+	this->points.assign(c.points.begin(), c.points.end());
+	this->subGraph = new double*[clusterSize];
+	for (int i = 0; i < clusterSize; ++i) {
+		subGraph[i] = new double[clusterSize];
+		for (int j = 0; j < clusterSize; ++j) 
+			subGraph[i][j] = c.subGraph[i][j];
+	}
+		
 }
 
 void Cluster::resetSubGraph()
@@ -39,11 +53,17 @@ void Cluster::setSubGraph(double ** adjMat)
 			}
 		}
 	}
+	Tools::writeArray2File("subGraph.csv", subGraph, clusterSize, clusterSize);
 }
 
 void Cluster::setClusterSize(int size)
 {
 	this->clusterSize = size;
+}
+
+void Cluster::updateClusterSize()
+{
+	setClusterSize((int)points.size());
 }
 
 void Cluster::initCluster(vector<ClusterPoint> points)
@@ -67,7 +87,7 @@ void Cluster::initCluster(vector<ClusterPoint> points)
 	this->clusterSize = clusterSize;*/
 }
 
-double Cluster::getEC()
+void Cluster::updateEC()
 {
 	double tempEC = 0;
 	for (int i = 0; i < clusterSize; ++i) {
@@ -76,7 +96,15 @@ double Cluster::getEC()
 				tempEC += subGraph[i][j];
 		}
 	}
-	return tempEC/clusterSize;
+	this->EC= tempEC/clusterSize;
+}
+
+void Cluster::updateClusterInfo(double** adjMat)
+{
+	updateClusterSize();
+	resetSubGraph();
+	setSubGraph(adjMat);
+	updateEC();
 }
 
 Cluster::Cluster()

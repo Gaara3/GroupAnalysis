@@ -89,7 +89,7 @@ TrackPoint::TrackPoint(int trackID, char * targetID, char * posixtime, char * ce
 	this->angle = atof(angle);
 }
 
-char * TrackPoint::getTargetID()
+string TrackPoint::getTargetID()
 {
 	return this->TARGETID;
 }

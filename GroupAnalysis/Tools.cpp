@@ -25,11 +25,12 @@ void Tools::writeArray2File(string filename, double** data, int m, int n) {
 }
 void Tools::writeArray2File(string filename, bool** data, int m, int n) {
 	std::ofstream outFile;
-	outFile.open(filename, std::ios::out);
+	outFile.open(filename, std::ios::out+std::ios::ate);
 	for (int i = 0; i < m; ++i) {
 		for (int j = 0; j < n; ++j)
 			outFile << data[i][j] << ",";
 		outFile << std::endl;
 	}
+	outFile << "-----------------------------------"<<std::endl;
 	outFile.close();
 }

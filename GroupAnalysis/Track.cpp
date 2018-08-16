@@ -111,7 +111,7 @@ void Track::setTargetID(char * id)
 	this->TARGETID = id;
 }
 
-char * Track::getTargetID()
+string Track::getTargetID()
 {
 	return this->TARGETID;
 }

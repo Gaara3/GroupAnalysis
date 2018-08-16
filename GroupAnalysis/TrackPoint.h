@@ -9,7 +9,7 @@ using std::vector;
 class TrackPoint
 {
 private:
-	char* TARGETID;
+	string TARGETID;
 	int TRACKID;
 	int ORDERNUMBER;
 	int ORIGINORDERNUMBER;
@@ -49,7 +49,7 @@ public:
 	TrackPoint(int trackID, char* targetID,char* orderNumber, char* posixTime, char* source, char* centerLONGITUDE, char* centerLatitude, char* centerAltitude, char* speed, char* angle, char* confidenceLevel, char* reserve1, char* reserve2);
 	TrackPoint(int trackID,char* targetID,char*posixtime, char* centerlongitude,char* cenlatitude,char* speed,char* angle);
 
-	char* getTargetID();
+	string getTargetID();
 	void setTargetID(char* targetID);
 	void setOrderNumber(int orderNumber);
 	int getOrderNumber();
