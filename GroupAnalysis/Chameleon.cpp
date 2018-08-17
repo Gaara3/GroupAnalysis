@@ -6,7 +6,9 @@
 #include <string>
 #include <iostream>
 #include <limits>
+#include <cstdio>
 
+//extern double totalTheshold;
 
 Chameleon::Chameleon(vector<OriginPoint> p, vector<int> i, int k)
 {
@@ -65,7 +67,8 @@ double Chameleon::RIofClusters(const Cluster &a,const Cluster &b)
 	double ECofA = a.EC;
 	double ECofB = b.EC;
 	double	ECofAB = ECofClusters(a, b);
-	return 2*ECofAB /(ECofA+ECofB);
+	double res=2*ECofAB /(ECofA+ECofB);
+	return res;
 }
 
 double Chameleon::RCofClusters(const Cluster &a,const Cluster &b)
@@ -73,7 +76,8 @@ double Chameleon::RCofClusters(const Cluster &a,const Cluster &b)
 	int sizeA = a.points.size(),sizeB = b.points.size();
 	double EcA = a.EC, Ecb = b.EC;
 	double ECofAB = ECofClusters(a, b);
-	return ECofAB *( sizeA + sizeB )/ ( sizeA * Ecb + sizeB * EcA );
+	double res= ECofAB *( sizeA + sizeB )/ ( sizeA * Ecb + sizeB * EcA );
+	return res;
 }
 
 double Chameleon::connectionOfClusters(const Cluster &a, const Cluster &b)
@@ -121,7 +125,11 @@ void Chameleon::merge2Clusters(Cluster &c1, Cluster& c2)
 		c1.points.push_back(c2.points.back());
 		c2.points.pop_back();
 	}
-	
+	c2.points.clear();
+	{
+		vector<ClusterPoint> tmp = c2.points;
+		c2.points.swap(tmp);
+	}
 	//更新c1的子图矩阵、EC值
 	c1.updateClusterInfo(adjMat);
 }
@@ -129,13 +137,15 @@ void Chameleon::merge2Clusters(Cluster &c1, Cluster& c2)
 void Chameleon::clusterAlgorithm()
 {		
 	double maxCon = 0;
+	double totalThreshold = 1.0/60.0;
 	while (clusters.size()>1) {//while(最近的簇，中位距离<阈值)
 
 		//找到应合并的两簇，找出下标
 		pair<int,int> targets = findClusters2Merge(maxCon);
 		
 		//最近簇的邻接权重太小，则结束聚类
-		if (maxCon < 1000)
+		
+		if (maxCon < totalThreshold)		//TimeThreshold(min) * DistThreshold(km)
 			break;
 		//合并两簇，更新新簇内的子图
 		merge2Clusters(clusters[targets.first],clusters[targets.second]);
@@ -155,6 +165,11 @@ deque<Cluster> Chameleon::chameleonCluster()
 	//聚类出最终类，存入clusters中
 	//clusterPartition();
 	clusterAlgorithm();
+	remove("knn.csv");
+	remove("orderedDis.csv");
+	remove("originDis.csv");
+	remove("tmpDis.csv");
+	remove("subGraph.csv");
 	return this->clusters;
 }
 
@@ -210,7 +225,7 @@ void Chameleon::knnGenerate(int k)
 	//根据第k位距离置knn表征矩阵
 	for (int i = 0; i < pointNum; ++i) {
 		for (int j = 0; j < pointNum; ++j) {
-			if (adjMat[i][j] <= kDis[i] || i==j)
+			if (adjMat[i][j] < kDis[i] || i==j)
 				knnMat[i][j] = false;
 			else
 				knnMat[i][j] = true;

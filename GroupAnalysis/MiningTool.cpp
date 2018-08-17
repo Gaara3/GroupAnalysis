@@ -1,7 +1,9 @@
 #include "MiningTool.h"
 #include <math.h>
 #include <algorithm> 
+#include <set>
 
+using std::set;
 MiningTool::MiningTool()
 {
 }
@@ -10,20 +12,31 @@ MiningTool::MiningTool()
 MiningTool::~MiningTool()
 {
 }
+/*int main() {
+	double testL0 = MiningTool::distanceBetweenPoints(124.07833, 21.4033,124.105, 21.4);
+	double testL20 = MiningTool::distanceBetweenPoints(0, 20, 0.03, 20);
+	double testL40 = MiningTool::distanceBetweenPoints(0, 40, 0.03, 40);
+	double testL60 = MiningTool::distanceBetweenPoints(0, 60, 0.03, 60);
+	printf("test0:%10lg", testL0);
+	printf("test20:%10lg", testL20);
+	printf("test40:%10lg", testL40);
+	printf("test60:%10lg", testL60);
 
+	return 0;
+}*/
 double MiningTool::miningDistance(OriginPoint a, OriginPoint b) {
 
-	double tDiff = abs(a.getPosixtime() - b.getPosixtime())/60;	//以分钟为单位，暂定理想编群tDiff应在20以内
+	double tDiff = fabs(a.getPosixtime() - b.getPosixtime())/60;	//以分钟为单位，暂定理想编群tDiff应在20以内
 	if (tDiff == 0)
 		tDiff = 1;
-	double distance = distanceBetweenPoints(a.getLongitude(), a.getLatitude(), b.getLongitude(), b.getLatitude())*1000;//以M为单位计算,暂定理想dis为1000级，log后为10级
+	double distance = distanceBetweenPoints(a.getLongitude(), a.getLatitude(), b.getLongitude(), b.getLatitude());//km级别
 	if (distance == 0)
 		distance = 2;
-	double angleDiff = fabs(a.getAngle() - b.getAngle());
-	double speedDiff = fabs(a.getSpeed() - b.getSpeed());
-	double res = (0.6*log(distance) + 0.2*(angleDiff + speedDiff)) * tDiff;
-	printf("%10lg\t", res);
-	return res;
+	//double angleDiff = fabs(a.getAngle() - b.getAngle());
+	//double speedDiff = fabs(a.getSpeed() - b.getSpeed());
+	//double res = (0.6*distance + 0.2*(angleDiff + speedDiff)) * tDiff;
+
+	return tDiff*distance;
 }
 
 
@@ -56,20 +69,19 @@ void MiningTool::analyzeBySnapshot(vector<OriginPoint> &Points, int trackNum, in
 
 	int tmpStartTime = startTime, tmpEndTime = startTime + timeInterval;
 	int pCounter = 0, pNum = Points.size();
+
 	while (tmpStartTime <= endTime) {		//每个时间切片轮询
 		vector<int> candidateIdx;
-		bool multiTarget = false;
+		set<string>targets;
 		do{
-			if (Points[pCounter].insideSnapshot(tmpStartTime, tmpEndTime)) {	//该点迹落于时间片内:1.判断是否为新目标 2.push入候选集
-				if (!multiTarget && !candidateIdx.empty() && !OriginPoint::sameTarget(Points[pCounter], Points[candidateIdx.back()]))//先与candidate最新元素比对
-					multiTarget = true;//将multiTarget加入条件，减少后续判断
-
+			if (Points[pCounter].insideSnapshot(tmpStartTime, tmpEndTime)) {	//该点迹落于时间片内
+				targets.insert(Points[pCounter].getTargetID());
 				candidateIdx.push_back(pCounter);
 			}else	//不在时间片内，则跳出，进入下一时间片
 				break;			
 		} while (++pCounter < pNum);
 		
-		if(multiTarget)//多目标情况下再进行聚类
+		if(targets.size()>3)//多目标情况下再进行聚类
 			snapshotAnalyze(Points,candidateIdx);
 
 		tmpStartTime = tmpEndTime;//更新时间切片
@@ -79,12 +91,9 @@ void MiningTool::analyzeBySnapshot(vector<OriginPoint> &Points, int trackNum, in
 
 void MiningTool::snapshotAnalyze(vector<OriginPoint> Point,vector<int>candidateIdx)
 {
-	vector<set<string> > groups;
+	set<set<string> > groups;
 	//TODO  优化，算出不同目标之间最近点距离进行判断是否要聚类
 	int PointNum = (int)candidateIdx.size();
-	//int** disMat = new int*[PointNum];
-	//for (int counter = 0; counter < PointNum; ++counter) 
-	//	disMat[counter] = new int[PointNum];
 
 	Chameleon chameleon(Point, candidateIdx,4);
 	//knn连接图生成
@@ -93,8 +102,7 @@ void MiningTool::snapshotAnalyze(vector<OriginPoint> Point,vector<int>candidateI
 	for (Cluster c : chameleon.getClusters()) {
 		set<string> tmp= Chameleon::clusterAnalyse(c);
 		if (tmp.size() > 1)
-			groups.push_back(tmp);
+			groups.insert(tmp);
 	}	
-	//大簇拆分(因为此时的knn为仅考虑邻接权重的结果，后续度量回加入EC，SEC)
-	//层次聚类	
+
 }

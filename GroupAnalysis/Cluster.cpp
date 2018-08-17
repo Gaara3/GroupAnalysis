@@ -101,8 +101,8 @@ void Cluster::updateEC()
 
 void Cluster::updateClusterInfo(double** adjMat)
 {
-	updateClusterSize();
 	resetSubGraph();
+	updateClusterSize();
 	setSubGraph(adjMat);
 	updateEC();
 }
