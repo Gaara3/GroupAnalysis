@@ -4,7 +4,7 @@
 
 Cluster::Cluster(vector<ClusterPoint> points)
 {
-	subGraph = nullptr;
+	//subGraph = nullptr;
 	this->points.assign(points.begin(), points.end());
 	this->clusterSize = points.size();
 }
@@ -13,31 +13,32 @@ Cluster::Cluster(vector<ClusterPoint> points, double **adjMat)
 {
 	this->points.assign(points.begin(), points.end());
 	this->clusterSize = points.size();
-	setSubGraph(adjMat);
-	updateEC();
+	//setSubGraph(adjMat);
+	this->updateEC(adjMat);
 }
 
 Cluster::Cluster(const Cluster & c)
 {
 	this->clusterSize = c.clusterSize;
 	this->points.assign(c.points.begin(), c.points.end());
-	this->subGraph = new double*[clusterSize];
+	this->EC = c.EC;
+	/*this->subGraph = new double*[clusterSize];
 	for (int i = 0; i < clusterSize; ++i) {
 		subGraph[i] = new double[clusterSize];
 		for (int j = 0; j < clusterSize; ++j) 
 			subGraph[i][j] = c.subGraph[i][j];
-	}
+	}*/
 		
 }
 
-void Cluster::resetSubGraph()
+/*void Cluster::resetSubGraph()
 {
 	for (int i = 0; i < clusterSize; ++i)
 		delete[] subGraph[i];
 	delete[] subGraph;
-}
+}*/
 
-void Cluster::setSubGraph(double ** adjMat)
+/*void Cluster::setSubGraph(double ** adjMat)
 {
 	//this->clusterSize = (int)points.size();
 	this->subGraph = new double*[clusterSize];
@@ -54,7 +55,7 @@ void Cluster::setSubGraph(double ** adjMat)
 		}
 	}
 	Tools::writeArray2File("subGraph.csv", subGraph, clusterSize, clusterSize);
-}
+}*/
 
 void Cluster::setClusterSize(int size)
 {
@@ -87,25 +88,25 @@ void Cluster::initCluster(vector<ClusterPoint> points)
 	this->clusterSize = clusterSize;*/
 }
 
-void Cluster::updateEC()
+void Cluster::updateEC(double **adjMat)
 {
 	double tempEC = 0;
 	for (int i = 0; i < clusterSize; ++i) {
 		for (int j = 0; j < clusterSize; ++j) {
 			if (i < j)
-				tempEC += subGraph[i][j];
+				tempEC += adjMat[points[i].id][points[j].id];
 		}
 	}
 	this->EC= tempEC/clusterSize;
 }
 
-void Cluster::updateClusterInfo(double** adjMat)
+/*void Cluster::updateClusterInfo(double** adjMat)
 {
 	resetSubGraph();
 	updateClusterSize();
 	setSubGraph(adjMat);
 	updateEC();
-}
+}*/
 
 Cluster::Cluster()
 {
@@ -118,11 +119,11 @@ Cluster::~Cluster()
 		vector<ClusterPoint> tmp = points;
 		points.swap(tmp);
 	}
-	if (subGraph == nullptr)
+	/*if (subGraph == nullptr)
 		return;
 	clusterSize = (int)points.size();
 	for (int i = 0; i < clusterSize; ++i)
 		delete[] subGraph[i];
-	delete[]subGraph;
+	delete[]subGraph;*/
 	
 }

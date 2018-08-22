@@ -130,7 +130,7 @@ char * Track::insertFreqSQL()
 {
 	char res[1000];
 	sprintf_s(res, 1000, "insert into m_frequentlytrack_main (GUID,TRACKID,POINTAMOUNT,TARGETID,STARTTIME,ENDTIME,LENGTH,CONFIDENCELEVEL,OPERATOR) VALUES\
-(UUID(),%d,%d,%s,'%s','%s',%lf,1,'%s')", TRACKID, POINTAMOUNT, TARGETID, SqlTool::datetimeConvertor(this->STARTTIME), SqlTool::datetimeConvertor(this->ENDTIME), length, OPERATOR);
+(UUID(),%d,%d,%s,'%s','%s',%lf,1,'%s')", TRACKID, POINTAMOUNT, TARGETID.data(), SqlTool::datetimeConvertor(this->STARTTIME), SqlTool::datetimeConvertor(this->ENDTIME), length, OPERATOR);
 	return res;
 }
 

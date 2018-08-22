@@ -1,9 +1,10 @@
 #include "MiningTool.h"
+#include "Tools.h"
+#include "SqlTool.h"
 #include <math.h>
 #include <algorithm> 
-#include <set>
 
-using std::set;
+
 MiningTool::MiningTool()
 {
 }
@@ -61,35 +62,42 @@ bool samePoint(OriginPoint a, OriginPoint b) {
 	return a.getLongitude() == b.getLongitude() && a.getPosixtime() == b.getPosixtime() && a.getLatitude() == b.getLatitude();
 }
 
-void MiningTool::analyzeBySnapshot(vector<OriginPoint> &Points, int trackNum, int startTime, int endTime, int timeInterval) {
+int MiningTool::analyzeBySnapshot(deque<OriginPoint> &Points, int trackNum, int startTime, int endTime, int timeInterval,int argc,char *argv[]) {
 	
 	std::sort(Points.begin(), Points.end(), posixSort);//按时间排序
 
 	Points.erase(std::unique(Points.begin(), Points.end(),samePoint), Points.end());//去重
 
 	int tmpStartTime = startTime, tmpEndTime = startTime + timeInterval;
-	int pCounter = 0, pNum = Points.size();
-
-	while (tmpStartTime <= endTime) {		//每个时间切片轮询
+	int pCounter = 0,groupCounter =0, pNum = Points.size();
+	int groupID = atoi(SqlTool::getVariableFromDB("SELECT MAX(GROUPID) FROM M_SELECTED_GROUP_MAIN"));
+	map<set<string>, pair<int, int>> tmpGroups;
+	while (tmpStartTime <= endTime&& pCounter < pNum ) {		//每个时间切片轮询
 		vector<int> candidateIdx;
 		set<string>targets;
-		do{
+
+		do{	
 			if (Points[pCounter].insideSnapshot(tmpStartTime, tmpEndTime)) {	//该点迹落于时间片内
 				targets.insert(Points[pCounter].getTargetID());
 				candidateIdx.push_back(pCounter);
-			}else	//不在时间片内，则跳出，进入下一时间片
-				break;			
-		} while (++pCounter < pNum);
-		
-		if(targets.size()>3)//多目标情况下再进行聚类
-			snapshotAnalyze(Points,candidateIdx);
-
+				++pCounter;
+			}
+			else 	//不在时间片内，则跳出，进入下一时间片
+				break;
+		} while (pCounter<pNum);
+		//printf("target Size:%5d\n", targets.size());
+		if (targets.size() > 3) {//多目标情况下再进行聚类
+			set<set<string> > snapshotGroups = snapshotAnalyze(Points, candidateIdx);	//时间片内的多个潜在编群
+			
+			adjacentSnapshotMerge(tmpGroups, snapshotGroups, tmpStartTime, tmpEndTime, timeInterval,argc,argv,groupCounter,groupID);
+		}			
 		tmpStartTime = tmpEndTime;//更新时间切片
 		tmpEndTime += timeInterval;
 	}
+	return groupCounter;
 }
 
-void MiningTool::snapshotAnalyze(vector<OriginPoint> Point,vector<int>candidateIdx)
+set<set<string> > MiningTool::snapshotAnalyze(deque<OriginPoint> Point,vector<int>candidateIdx)
 {
 	set<set<string> > groups;
 	//TODO  优化，算出不同目标之间最近点距离进行判断是否要聚类
@@ -97,12 +105,40 @@ void MiningTool::snapshotAnalyze(vector<OriginPoint> Point,vector<int>candidateI
 
 	Chameleon chameleon(Point, candidateIdx,4);
 	//knn连接图生成
-	chameleon.chameleonCluster();
+	
 	//生成簇进行目标分析，单目标簇删去，多目标簇进行簇内去重
-	for (Cluster c : chameleon.getClusters()) {
-		set<string> tmp= Chameleon::clusterAnalyse(c);
-		if (tmp.size() > 1)
+	for (Cluster c : chameleon.chameleonCluster()) {
+		set<string> tmp= Chameleon::clusterAnalyse(c);	//簇内去重
+		if (tmp.size() > 1)		//单目标簇剔除
 			groups.insert(tmp);
 	}	
 
+	return groups;
+}
+
+void MiningTool::adjacentSnapshotMerge(map<set<string>, pair<int, int>>& tmpGroup,set<set<string>> &snapshotGroup,int startTime,int endTime,int interval,int argc,char*argv[],int &groupCounter,int& groupID)
+{
+	//第一步：对map进行轮询，更新持续的编群、或剔除不再持续的编群
+	for (map<set<string>, pair<int, int>>::iterator i = tmpGroup.begin(); i != tmpGroup.end();     /*TODO*/) {
+
+		if (snapshotGroup.count((*i).first)) {	//相邻时间片内编群仍存在：更新时间，删除set记录
+			(*i).second.second = endTime;
+			snapshotGroup.erase((*i).first);
+			++i;
+		}
+		else {	//新时间片的编群不含该记录，则:①编群维持时间段，直接删除  ②编群持续时间长，记录后再删除
+			if (startTime - (*i).second.first > interval) { 	//该编群到此截止,持续时间超过interval：记录该编群信息
+				++groupCounter;
+				++groupID;
+				Tools::recordGroupInfo((*i).second.first, (*i).second.second, (*i).first,argc,argv,groupID);
+				
+			}
+			i = tmpGroup.erase(i);
+		}
+	}
+	//对于新出现的编群，则放入tmpGroup，设置起止信息
+	for (set<string> ss:snapshotGroup) {
+		tmpGroup[ss].first = startTime;
+		tmpGroup[ss].second = endTime;
+	}
 }

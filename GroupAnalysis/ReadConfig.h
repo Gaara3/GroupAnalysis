@@ -1,18 +1,16 @@
-#pragma once
-#ifndef __CONFIGREADER_H__
-#define __CONFIGREADER_H__
+#ifndef __READ_CONFIG_H__
+#define __READ_CONFIG_H__
 
 #include <string>
 #include <fstream>
 
-using std::string;
-using std::ifstream;
+using namespace std;
 
-class ConfigReader
+class CReadCfg
 {
 public:
-	ConfigReader();
-	~ConfigReader();
+	CReadCfg();
+	~CReadCfg();
 
 	bool ReadConfig(const string& key, string& value);
 	bool ReadConfig(const string& key, int& value);
@@ -21,7 +19,5 @@ public:
 private:
 	ifstream m_infile;
 };
-#endif // !__CONFIGREADER_H__
 
-
-
+#endif //__READ_CONFIG_H__

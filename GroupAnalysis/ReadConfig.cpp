@@ -1,9 +1,12 @@
-#include "ConfigReader.h"
+//#include "stdafx.h"
+#include "ReadConfig.h"
+#include <iostream>
 #include <stdlib.h>
 #include <string.h>
+#include "Define.h"
 #include <Windows.h>
 
-ConfigReader::ConfigReader()
+CReadCfg::CReadCfg()
 {
 	wchar_t exeFullPath[MAX_PATH] = { 0 };
 	GetModuleFileName(NULL, exeFullPath, MAX_PATH);
@@ -21,8 +24,7 @@ ConfigReader::ConfigReader()
 	m_infile.open(path.c_str());
 }
 
-
-ConfigReader::~ConfigReader()
+CReadCfg::~CReadCfg()
 {
 	if (m_infile)
 	{
@@ -30,7 +32,8 @@ ConfigReader::~ConfigReader()
 	}
 }
 
-bool ConfigReader::ReadConfig(const string & key, string & value)
+
+bool CReadCfg::ReadConfig(const string& key, string& value)
 {
 	if (!m_infile)
 		return false;
@@ -51,7 +54,7 @@ bool ConfigReader::ReadConfig(const string & key, string & value)
 	return false;
 }
 
-bool ConfigReader::ReadConfig(const string & key, int & value)
+bool CReadCfg::ReadConfig(const string& key, int& value)
 {
 	if (!m_infile)
 		return false;
@@ -72,7 +75,7 @@ bool ConfigReader::ReadConfig(const string & key, int & value)
 	return false;
 }
 
-bool ConfigReader::AnalyseLine(const string & line, string & key, string & value)
+bool CReadCfg::AnalyseLine(const string& line, string& key, string& value)
 {
 	if (line.empty())
 		return false;

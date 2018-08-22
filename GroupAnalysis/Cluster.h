@@ -9,19 +9,19 @@ private:
 
 public:
 	double EC;
-	double **subGraph;
+	//double **subGraph;
 	vector<ClusterPoint> points;
 	Cluster();
 	~Cluster();
 	Cluster(vector<ClusterPoint> points);
 	Cluster(vector<ClusterPoint>, double**);
 	Cluster(const Cluster &c);
-	void resetSubGraph();
-	void setSubGraph(double **adjMat);
+	//void resetSubGraph();
+	//void setSubGraph(double **adjMat);
 	void setClusterSize(int size);
 	void updateClusterSize();
 	void initCluster(vector<ClusterPoint> points);	//…Ë÷√æ‡¿Î◊”’Û£¨…Ë÷√clusterSize
-	void updateEC();	
-	void updateClusterInfo(double **adjMat);
+	void updateEC(double **adj);	
+	//void updateClusterInfo(double **adjMat);
 };
 

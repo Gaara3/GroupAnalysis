@@ -10,7 +10,7 @@
 
 //extern double totalTheshold;
 
-Chameleon::Chameleon(vector<OriginPoint> p, vector<int> i, int k)
+Chameleon::Chameleon(deque<OriginPoint> p, vector<int> i, int k)
 {
 	int pNum = i.size();
 	//为簇内点赋值id
@@ -85,7 +85,7 @@ double Chameleon::connectionOfClusters(const Cluster &a, const Cluster &b)
 	return RIofClusters(a,b) * RCofClusters(a,b);
 }
 
-void Chameleon::setClusterSubGraph(Cluster& cluster)
+/*void Chameleon::setClusterSubGraph(Cluster& cluster)
 {
 	int pNum = cluster.points.size();
 	cluster.subGraph = new double*[pNum];
@@ -96,12 +96,12 @@ void Chameleon::setClusterSubGraph(Cluster& cluster)
 		for (int j = 0; j < pNum; ++j)
 			cluster.subGraph[i][j] = this->adjMat[cluster.points[i].id][cluster.points[j].id];
 	}
-}
+}*/
 
-pair<int, int> Chameleon::findClusters2Merge(double &maxCon)
+pair<int, int> Chameleon::findClusters2Merge()
 {
 	int cSize = (int)clusters.size();
-	maxCon = connectionOfClusters(clusters[0], clusters[1]);
+	double maxCon = connectionOfClusters(clusters[0], clusters[1]);
 	pair<int, int>res(0,1);
 	for (int i = 0; i < cSize; ++i) {
 		for (int j = 0; j < i; ++j) {	//减少重复计算次数
@@ -109,9 +109,9 @@ pair<int, int> Chameleon::findClusters2Merge(double &maxCon)
 				continue;
 			double tmp = connectionOfClusters(clusters[i],clusters[j]);
 			if (tmp > maxCon) {	//取到连接权重最大的两簇
-				maxCon = tmp;
-				res.first = i;
-				res.second = j;
+				maxCon = tmp;	
+				res.first = clusters[i].points.size()<clusters[j].points.size() ? i : j;//将前者设为size较大的一个簇
+				res.second =res.first==i ? j : i;
 			}
 		}
 	}
@@ -125,33 +125,73 @@ void Chameleon::merge2Clusters(Cluster &c1, Cluster& c2)
 		c1.points.push_back(c2.points.back());
 		c2.points.pop_back();
 	}
-	c2.points.clear();
+	//c2.setClusterSize(0);
+	//c2.points.clear();
 	{
 		vector<ClusterPoint> tmp = c2.points;
 		c2.points.swap(tmp);
 	}
 	//更新c1的子图矩阵、EC值
-	c1.updateClusterInfo(adjMat);
+	//c1.updateClusterInfo(adjMat);
+	c1.updateClusterSize();
+	c1.updateEC(adjMat);
+	
 }
 
 void Chameleon::clusterAlgorithm()
 {		
-	double maxCon = 0;
-	double totalThreshold = 1.0/60.0;
-	while (clusters.size()>1) {//while(最近的簇，中位距离<阈值)
+	while (clusters.size()>1) {
 
-		//找到应合并的两簇，找出下标
-		pair<int,int> targets = findClusters2Merge(maxCon);
+		if (findMaxWeight() < 1.0f / 60.0f)//TimeThreshold(min) * DistThreshold(km)
+			break;
+		//找到应合并的两簇，找出下标。其中size较大的簇在前
+		pair<int,int> targets = findClusters2Merge();
 		
 		//最近簇的邻接权重太小，则结束聚类
 		
-		if (maxCon < totalThreshold)		//TimeThreshold(min) * DistThreshold(km)
-			break;
 		//合并两簇，更新新簇内的子图
+		
 		merge2Clusters(clusters[targets.first],clusters[targets.second]);
 		clusters.erase(clusters.begin() + targets.second );	//簇队列移除该簇
-
+		//printInfo();
 	}
+}
+
+double Chameleon::maxWeightOf2Clusters(const Cluster & c1, const Cluster & c2)
+{
+	double res = 0;
+	for (int i = 0; i < c1.points.size(); ++i) {
+		for (int j = 0; j < c2.points.size(); ++j) {
+			double tmp = adjMat[c1.points[i].id][c2.points[j].id];
+			if (tmp > res)
+				res = tmp;
+		}
+	}
+	return res;
+}
+
+void Chameleon::printInfo()
+{
+	printf("New turn\n");
+	for (int i = 0; i < clusters.size();++i) {
+		printf("Cluster %d:", i);
+		for (ClusterPoint cp : clusters[i].points)
+			printf("%d  ", cp.id);
+		printf("\n--------------------------\n\n");
+	}
+}
+
+double Chameleon::findMaxWeight()
+{
+	double res = 0;
+	for (int i = 0; i < clusters.size(); ++i) {
+		for (int j = 0; j < i; ++j) {
+			double tmpMaxWeight = maxWeightOf2Clusters(clusters[i], clusters[j]);
+			if (tmpMaxWeight > res)
+				res = tmpMaxWeight;
+		}
+	}
+	return res;
 }
 
 deque<Cluster> Chameleon::getClusters()
@@ -209,13 +249,13 @@ void Chameleon::knnGenerate(int k)
 				break;	//以下三角形式构建距离矩阵，此处break减少循环次数
 		}
 	}
-	Tools::writeArray2File("tmpDis.csv", tmpDisMat, pointNum, pointNum);
+	//Tools::writeArray2File("tmpDis.csv", tmpDisMat, pointNum, pointNum);
 	//对每个点寻找到k位距离阈值
 	for (int counter = 0; counter < pointNum; ++counter) {
 		std::sort(tmpDisMat[counter], tmpDisMat[counter] + pointNum);
 		kDis[counter] = tmpDisMat[counter][pointNum-k];
 	}
-	Tools::writeArray2File("orderedDis.csv", tmpDisMat, pointNum, pointNum);
+	//Tools::writeArray2File("orderedDis.csv", tmpDisMat, pointNum, pointNum);
 
 	for (int i = 0; i < pointNum; ++i) {
 		delete[] tmpDisMat[i];
@@ -231,7 +271,7 @@ void Chameleon::knnGenerate(int k)
 				knnMat[i][j] = true;
 		}
 	}
-	Tools::writeArray2File("knn.csv", knnMat, pointNum, pointNum);
+	//Tools::writeArray2File("knn.csv", knnMat, pointNum, pointNum);
 
 	for (int i = 0; i < pointNum; ++i) {
 		if (visitedFlag[i])
@@ -244,7 +284,13 @@ void Chameleon::knnGenerate(int k)
 		if (connectedP.size() == 1)
 			continue;
 		this->clusters.push_back(Cluster(connectedP,adjMat));
+		//printf("%10lg\t", clusters.back().EC);
 	}
+
+	for (int i = 0; i < pointNum; ++i) {
+		delete[] knnMat[i];
+	}
+	delete[] knnMat;
 	//Tools::writeArray2File("afterSubGraph.csv", clusters.back().subGraph, clusters.back().points.size(), clusters.back().points.size());
 }
 

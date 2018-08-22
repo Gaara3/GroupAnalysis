@@ -1,41 +1,50 @@
 ﻿#include "OriginPoint.h"
 #include "Track.h"
+#include "Log.h"
 #include "SqlTool.h"
+#include <deque>
 #include "MiningTool.h"
 #include <vector>
 
-int readTrackInfoFromDB(vector<Track> &,int &trackNum);	//读取history里的所有点记录
-void readTrackPointFromDB(vector<Track>,vector<OriginPoint>&);	//读取特定条件的点记录
+using std::deque;
+int readTrackInfoFromDB(vector<Track> &,int &trackNum, int argc, char* argv[]);	//读取history里的所有点记录
+void readTrackPointFromDB(vector<Track>,deque<OriginPoint>&);	//读取特定条件的点记录
 //int** clusterGenerator(vector<TrackPoint>, int timeInterval);//对vector内的点迹以timeInterval为单位聚类
 
 double totalThreshold = 1/60;
 
-int main() {
+int main(int argc, char* argv[]) {
 
 	int timeInterval = 3600*5;	//TODO read from config
 	SqlTool::connectDB();
 
 	vector<Track> tracks;
-	int trackNum = 0;
+	deque<OriginPoint>Points;
 
-	vector<OriginPoint>Points;
-	Points.reserve(readTrackInfoFromDB(tracks, trackNum));//从主表获取轨道信息
+	int trackNum = 0;
+	readTrackInfoFromDB(tracks, trackNum,argc,argv);//从主表获取轨道信息
+	SL_LOG("Read track info from DB completed");
+
 	readTrackPointFromDB(tracks,Points);//从子表获取点迹信息
+	SL_LOG("Read track points info from DB completed");
 
 	int minPosixTime = atoi(SqlTool::getVariableFromDB("select min(POSIXTIME) from m_selectedtrack_sub"));
 	int maxPosixTime = atoi(SqlTool::getVariableFromDB("select max(POSIXTIME) from m_selectedtrack_sub"));
 
-	MiningTool::analyzeBySnapshot(Points, trackNum, minPosixTime, maxPosixTime, timeInterval);//对整体进行切片分析
+	SL_LOG("Analyze by snapshot start");
+	int groupCount =MiningTool::analyzeBySnapshot(Points, trackNum, minPosixTime, maxPosixTime, timeInterval, argc, argv);//对整体进行切片分析
+	SL_LOG("Analyze by snapshot end");
 
-	system("pause");
+	//system("pause");
+	printf("{\"groupCount\":%d}", groupCount);
 	return 0;
 }
 
 
-int readTrackInfoFromDB(vector<Track> &tracks,int &trackNum) {
+int readTrackInfoFromDB(vector<Track> &tracks,int &trackNum, int argc, char* argv[]) {
 	char* getMain = new char[256];
 	sprintf_s(getMain, 256, "select TRACKID,POINTAMOUNT,TARGETID,STARTTIME,ENDTIME,LENGTH,SOURCE,TASKINFO,CONFIDENCELEVEL,\
-OPERATOR,RESERVE1,RESERVE2 from m_selectedtrack_main;");
+OPERATOR,RESERVE1,RESERVE2 from m_selectedtrack_main where operator = '%s';",argv[argc-1]);
 	int res = 0;
 	SqlTool::operationExcutor(getMain, SqlTool::res);
 	//获取所有主轨迹信息
@@ -51,7 +60,7 @@ OPERATOR,RESERVE1,RESERVE2 from m_selectedtrack_main;");
 	return res;
 }
 
-void readTrackPointFromDB(vector<Track> tracks,vector<OriginPoint>&res) {
+void readTrackPointFromDB(vector<Track> tracks,deque<OriginPoint>&res) {
 	
 	int trackNum = tracks.size();
 	for (int counter = 0; counter < trackNum;counter++) {
